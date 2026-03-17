@@ -1,0 +1,53 @@
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
+
+@TeleOp
+public class Jan22Code extends OpMode {
+    DcMotor linearSlide;
+    DcMotor motorFrontLeft;
+    DcMotor motorBackLeft;
+    DcMotor motorFrontRight;
+    DcMotor motorBackRight;
+    final double DEADBAND = 0.1;
+    private Servo servo_test = null;
+
+    @Override
+    public void init() {
+        // Declare our motors
+        // Make sure your ID's match your configuration
+        motorFrontLeft = hardwareMap.dcMotor.get("motorFrontLeft");
+        motorBackLeft = hardwareMap.dcMotor.get("motorBackLeft");
+        motorFrontRight = hardwareMap.dcMotor.get("motorFrontRight");
+        motorBackRight = hardwareMap.dcMotor.get("motorBackRight");
+        linearSlide = hardwareMap.get(DcMotor.class, "LinearSlideMotor");
+        linearSlide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        servo_test = hardwareMap.servo.get("ClawServo");
+        //telemetry.addData("Status", "Initialization Complete");
+        // Reverse the right side motors
+        // Reverse left motors if you are using NeveRests
+        motorFrontRight.setDirection(DcMotorSimple.Direction.REVERSE);
+        motorBackRight.setDirection(DcMotorSimple.Direction.REVERSE);
+    }
+
+    @Override
+    public void loop() {
+        double y = gamepad1.left_stick_y; // Remember, this is reversed!
+        double x = -gamepad1.left_stick_x * 1.1; // Counteract imperfect strafing
+        double rx = -gamepad1.right_stick_x;
+        //telemetry.addData("Right trigger", gamepad1.right_trigger);
+        //telemetry.addData("Left trigger", gamepad1.left_trigger);
+        servo_move(); // this method is not defined in this code you have provided, so if you have it, make sure to call it properly 
+
+        // Denominator is the largest motor power (absolute value) or 1
+        // This ensures all the powers maintain the same ratio, but only when
+        // at least one is out of the range [-1, 1]
+        double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
+        double frontLeftPower = (y + x + rx) / denominator;
+        double backLeftPower = (y - x + rx) / denominator;
+        double frontRightPower = (y - x - rx) / denominator;
+        double backRightPower = (y + x - rx) / denominator;
+
+        motorFrontLeft.setPower(frontLeftPower);
